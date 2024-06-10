@@ -1,0 +1,60 @@
+#include <stdio.h>
+#include <stdlib.h>
+#define ALPHABET_SIZE 26
+int i;
+char encrypt(char letter, char key[]) {
+    if (isalpha(letter)) {
+        char base = isupper(letter) ? 'A' : 'a';
+        return key[letter - base];
+    }
+    return letter;
+}
+char decrypt(char letter, char key[]) {
+    if (isalpha(letter)) {
+        char base = isupper(letter) ? 'A' : 'a';
+        for (i = 0; i < ALPHABET_SIZE; i++) {
+            if (key[i] == letter)
+                return i + base;
+        }
+    }
+    return letter;
+}
+void monoalphabeticEncrypt(char message[], char key[]) {
+    int i = 0;
+    while (message[i] != '\0') {
+        message[i] = encrypt(message[i], key);
+        i++;
+    }
+}
+void monoalphabeticDecrypt(char message[], char key[]) {
+    int i = 0;
+    while (message[i] != '\0') {
+        message[i] = decrypt(message[i], key);
+        i++;
+    }
+}
+int main() {
+    char message[1000];
+    char key[ALPHABET_SIZE + 1];
+    printf("Enter the message to encrypt: ");
+    scanf(" %[^\n]s", message);
+    printf("Original message: %s\n", message);
+    printf("Enter the key: ");
+    scanf("%s", key);
+    monoalphabeticEncrypt(message, key);
+    printf("Encrypted message: %s\n", message);
+    monoalphabeticDecrypt(message, key);
+    printf("Decrypted message: %s\n", message);
+    
+    return 0;
+}
+
+
+
+OUTPUT:-
+
+Enter the message to encrypt: NETWORK
+Original message: NETWORK
+Enter the key: HELOWARYUBCDFGIJKMNPQSTVXZ
+Encrypted message: GWPTIMC
+Decrypted message: NETWORK
