@@ -1,0 +1,130 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MATRIX_SIZE 2
+#define MOD 26
+
+// Function prototypes
+void encryptMessage(char* message, int key[MATRIX_SIZE][MATRIX_SIZE], char* ciphertext);
+void decryptMessage(char* ciphertext, int key[MATRIX_SIZE][MATRIX_SIZE], char* plaintext);
+int modInverse(int a, int m);
+void findInverseKey(int key[MATRIX_SIZE][MATRIX_SIZE], int invKey[MATRIX_SIZE][MATRIX_SIZE]);
+
+int main() {
+    char message[100];
+    char ciphertext[100];
+    char decryptedtext[100];
+    int key[MATRIX_SIZE][MATRIX_SIZE];
+
+    // Input the key matrix
+    printf("Enter the 2x2 key matrix (4 numbers):\n");
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            scanf("%d", &key[i][j]);
+        }
+    }
+
+    // Input the message
+    printf("Enter the message:\n");
+    scanf("%s", message);
+
+    // Encrypt the message
+    encryptMessage(message, key, ciphertext);
+    printf("Encrypted Message: %s\n", ciphertext);
+
+    // Decrypt the message
+    decryptMessage(ciphertext, key, decryptedtext);
+    printf("Decrypted Message: %s\n", decryptedtext);
+
+    return 0;
+}
+
+// Encrypt function
+void encryptMessage(char* message, int key[MATRIX_SIZE][MATRIX_SIZE], char* ciphertext) {
+    int len = strlen(message);
+    int messageVector[MATRIX_SIZE];
+    int cipherVector[MATRIX_SIZE];
+    int i, j;
+
+    for (i = 0; i < len; i += 2) {
+        for (j = 0; j < MATRIX_SIZE; j++) {
+            if (i + j < len) {
+                messageVector[j] = message[i + j] - 'a';
+            } else {
+                messageVector[j] = 'x' - 'a';  // Padding with 'x'
+            }
+        }
+
+        for (j = 0; j < MATRIX_SIZE; j++) {
+            cipherVector[j] = 0;
+            for (int k = 0; k < MATRIX_SIZE; k++) {
+                cipherVector[j] += key[j][k] * messageVector[k];
+            }
+            cipherVector[j] = cipherVector[j] % MOD;
+        }
+
+        for (j = 0; j < MATRIX_SIZE; j++) {
+            ciphertext[i + j] = cipherVector[j] + 'a';
+        }
+    }
+    ciphertext[i] = '\0';
+}
+
+// Decrypt function
+void decryptMessage(char* ciphertext, int key[MATRIX_SIZE][MATRIX_SIZE], char* plaintext) {
+    int invKey[MATRIX_SIZE][MATRIX_SIZE];
+    findInverseKey(key, invKey);
+
+    int len = strlen(ciphertext);
+    int cipherVector[MATRIX_SIZE];
+    int plainVector[MATRIX_SIZE];
+    int i, j;
+
+    for (i = 0; i < len; i += 2) {
+        for (j = 0; j < MATRIX_SIZE; j++) {
+            if (i + j < len) {
+                cipherVector[j] = ciphertext[i + j] - 'a';
+            } else {
+                cipherVector[j] = 'x' - 'a';  // Padding with 'x'
+            }
+        }
+
+        for (j = 0; j < MATRIX_SIZE; j++) {
+            plainVector[j] = 0;
+            for (int k = 0; k < MATRIX_SIZE; k++) {
+                plainVector[j] += invKey[j][k] * cipherVector[k];
+            }
+            plainVector[j] = (plainVector[j] % MOD + MOD) % MOD;
+        }
+
+        for (j = 0; j < MATRIX_SIZE; j++) {
+            plaintext[i + j] = plainVector[j] + 'a';
+        }
+    }
+    plaintext[i] = '\0';
+}
+
+// Function to find modular inverse
+int modInverse(int a, int m) {
+    a = a % m;
+    for (int x = 1; x < m; x++) {
+        if ((a * x) % m == 1) {
+            return x;
+        }
+    }
+    return -1;
+}
+
+// Function to find inverse key matrix
+void findInverseKey(int key[MATRIX_SIZE][MATRIX_SIZE], int invKey[MATRIX_SIZE][MATRIX_SIZE]) {
+    int det = (key[0][0] * key[1][1] - key[0][1] * key[1][0]) % MOD;
+    if (det < 0) det += MOD;
+
+    int invDet = modInverse(det, MOD);
+
+    invKey[0][0] = key[1][1] * invDet % MOD;
+    invKey[0][1] = (-key[0][1] + MOD) * invDet % MOD;
+    invKey[1][0] = (-key[1][0] + MOD) * invDet % MOD;
+    invKey[1][1] = key[0][0] * invDet % MOD;
+}
