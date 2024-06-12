@@ -1,0 +1,44 @@
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+int mod_exp(int base, int exponent, int modulus) {
+    int result = 1;
+    base = base % modulus;
+    while (exponent > 0) {
+        if (exponent % 2 == 1)
+            result = (result * base) % modulus;
+        exponent = exponent >> 1;
+        base = (base * base) % modulus;
+    }
+    return result;
+}
+int rsa_encrypt(int plaintext, int e, int n) {
+    return mod_exp(plaintext, e, n);
+}
+int rsa_decrypt(int ciphertext, int d, int n) {
+    return mod_exp(ciphertext, d, n);
+}
+void brute_force_attack(int e, int n, int ciphertext) {
+    printf("Brute force attack results:\n");
+    int i;
+    for (i = 0; i < 26; i++) {
+        int encrypted = rsa_encrypt(i, e, n);
+        if (encrypted == ciphertext) {
+            printf("Ciphertext %d corresponds to plaintext %d\n", ciphertext, i);
+            return;
+        }
+    }
+    printf("Ciphertext %d does not correspond to any plaintext in the range 0-25\n", ciphertext);
+}
+int main() {
+    int n = 3599; 
+    int e = 31;   
+    int d = 937;  
+    int plaintext = 7;
+    int ciphertext = rsa_encrypt(plaintext, e, n);
+    printf("Plaintext %d encrypted to ciphertext %d\n", plaintext, ciphertext);
+    int decrypted = rsa_decrypt(ciphertext, d, n);
+    printf("Ciphertext %d decrypted to plaintext %d\n", ciphertext, decrypted);
+    brute_force_attack(e, n, ciphertext);
+    return 0;
+}
