@@ -1,0 +1,33 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+unsigned long long mod_exp(unsigned long long a, unsigned long long b, unsigned long long m) {
+    unsigned long long result = 1;
+    a = a % m;
+    while (b > 0) {
+        if (b & 1)
+            result = (result * a) % m;
+        b = b >> 1;
+        a = (a * a) % m;
+    }
+    return result;
+}
+unsigned long long diffie_hellman(unsigned long long p, unsigned long long g, unsigned long long x) {
+    return mod_exp(g, x, p);
+}
+int main() {
+    unsigned long long p = 23; 
+    unsigned long long g = 5; 
+    unsigned long long alice_secret = 6; 
+    unsigned long long bob_secret = 15;   
+    unsigned long long A = diffie_hellman(p, g, alice_secret);
+    unsigned long long B = diffie_hellman(p, g, bob_secret);
+    unsigned long long shared_secret_A = diffie_hellman(p, B, alice_secret);
+    unsigned long long shared_secret_B = diffie_hellman(p, A, bob_secret);
+    if (shared_secret_A == shared_secret_B) {
+        printf("Shared secret key: %llu\n", shared_secret_A);
+    } else {
+        printf("Error: Shared secret keys do not match!\n");
+    }
+    return 0;
+}
