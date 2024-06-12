@@ -1,0 +1,56 @@
+#include <stdio.h>
+#include <string.h>
+void DES_encrypt_block(unsigned char *plaintext, unsigned char *key, unsigned char *ciphertext);
+void DES_decrypt_block(unsigned char *ciphertext, unsigned char *key, unsigned char *plaintext);
+
+void XOR_blocks(unsigned char *block1, unsigned char *block2, unsigned char *output, int block_size) {
+     int i;
+     for ( i = 0; i < block_size; i++) {
+        output[i] = block1[i] ^ block2[i];
+    }
+}
+void TripleDES_encrypt_block(unsigned char *plaintext, unsigned char *key, unsigned char *ciphertext) {
+    unsigned char temp1[8];
+    unsigned char temp2[8];
+    DES_encrypt_block(plaintext, key, temp1);
+    DES_decrypt_block(temp1, key + 8, temp2);
+    DES_encrypt_block(temp2, key + 16, ciphertext);
+}
+void TripleDES_encrypt_CBC(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, unsigned char *ciphertext) {
+    int block_size = 8;
+    unsigned char block[8];
+    unsigned char prev_block[8];
+    int num_blocks = (plaintext_len + block_size - 1) / block_size;
+    memcpy(prev_block, iv, block_size);
+int i;
+    for (i = 0; i < num_blocks; i++) {
+        int block_offset = i * block_size;
+        int bytes_to_copy = (plaintext_len - block_offset >= block_size) ? block_size : plaintext_len - block_offset;
+        memset(block, 0, block_size);
+        memcpy(block, plaintext + block_offset, bytes_to_copy);
+        XOR_blocks(block, prev_block, block, block_size);
+        TripleDES_encrypt_block(block, key, ciphertext + block_offset);
+        memcpy(prev_block, ciphertext + block_offset, block_size);
+    }
+}
+void DES_encrypt_block(unsigned char *plaintext, unsigned char *key, unsigned char *ciphertext) {
+    memcpy(ciphertext, plaintext, 8);
+}
+void DES_decrypt_block(unsigned char *ciphertext, unsigned char *key, unsigned char *plaintext) {
+    memcpy(plaintext, ciphertext, 8);
+}
+int main() {
+    unsigned char key[24] = "123456789012345678901234";
+    unsigned char iv[8] = "12345678";
+    unsigned char plaintext[] = "This is a top secret message.";
+    unsigned char ciphertext[64];
+    int plaintext_len = strlen((char *)plaintext);
+    TripleDES_encrypt_CBC(plaintext, plaintext_len, key, iv, ciphertext);
+    printf("Ciphertext is:\n");
+    int i;
+    for ( i = 0; i < ((plaintext_len + 7) / 8) * 8; i++) {
+        printf("%02x", ciphertext[i]);
+    }
+    printf("\n");
+    return 0;
+}
