@@ -1,0 +1,48 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#define BLOCK_SIZE 136 
+#define STATE_SIZE 25  
+void initialize_state(uint64_t state[5][5]) {
+    memset(state, 0, sizeof(uint64_t) * 5 * 5);
+}
+void pad(uint8_t *message, size_t message_len, uint8_t *padded_message, size_t *padded_len) {
+    size_t pad_len = BLOCK_SIZE - (message_len % BLOCK_SIZE);
+    *padded_len = message_len + pad_len;
+    memcpy(padded_message, message, message_len);
+    padded_message[message_len] = 0x06; 
+    memset(padded_message + message_len + 1, 0, pad_len - 2);
+    padded_message[*padded_len - 1] = 0x80; 
+}
+void keccak_f(uint64_t state[5][5]) {
+}
+void sha3(const uint8_t *message, size_t message_len, uint64_t hash[5][5]) {
+    uint64_t state[5][5];
+    initialize_state(state);
+    uint8_t padded_message[BLOCK_SIZE * 2]; 
+    size_t padded_len;
+    pad((uint8_t *)message, message_len, padded_message, &padded_len);
+    size_t i,j;
+    for (i = 0; i < padded_len; i += BLOCK_SIZE) {
+        for (j = 0; j < BLOCK_SIZE / 8; j++) {
+            state[j / 5][j % 5] ^= ((uint64_t *)padded_message)[i / 8 + j];
+        }
+        keccak_f(state);
+    }
+    memcpy(hash, state, sizeof(uint64_t) * 5 * 5);
+}
+int main() {
+    uint8_t message[] = "Hello, world!";
+    size_t message_len = strlen((char *)message);
+    uint64_t hash[5][5];
+    sha3(message, message_len, hash);
+    printf("SHA-3 hash:\n");
+    int i,j;
+    for ( i = 0; i < 5; i++) {
+        for (j = 0; j < 5; j++) {
+            printf("%016lx ", hash[i][j]);
+        }
+        printf("\n");
+    }
+    return 0;
+}
