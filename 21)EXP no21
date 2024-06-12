@@ -1,0 +1,144 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#define AES_BLOCK_SIZE 16
+static const uint8_t sbox[256] = {
+};
+static const uint8_t rsbox[256] = {
+};
+static const uint8_t Rcon[11] = {
+};
+void KeyExpansion(const uint8_t* key, uint8_t* roundKeys);
+void AES_encrypt(const uint8_t* input, uint8_t* output, const uint8_t* roundKeys);
+void AES_decrypt(const uint8_t* input, uint8_t* output, const uint8_t* roundKeys);
+void print_hex(uint8_t* data, int len);
+void pad(uint8_t *plaintext, int *len, int block_size);
+void xor_block(uint8_t *a, uint8_t *b, uint8_t *out);
+void AES_ECB_encrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys);
+void AES_ECB_decrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys);
+void AES_CBC_encrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys, uint8_t* iv);
+void AES_CBC_decrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys, uint8_t* iv);
+void AES_CFB_encrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys, uint8_t* iv);
+void AES_CFB_decrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys, uint8_t* iv);
+int main() {
+    uint8_t key[16] = { /* 16 bytes key */ };
+    uint8_t iv[16] = { /* 16 bytes IV */ };
+    uint8_t roundKeys[176]; 
+    KeyExpansion(key, roundKeys);
+    uint8_t plaintext[] = "This is a test message for AES encryption.";
+    int len = strlen((char *)plaintext);
+    int padded_len = len;
+    uint8_t padded_plaintext[128];
+    memcpy(padded_plaintext, plaintext, len);
+    pad(padded_plaintext, &padded_len, AES_BLOCK_SIZE);
+    uint8_t encrypted[128];
+    uint8_t decrypted[128];
+    printf("Plaintext: %s\n", plaintext);
+    AES_ECB_encrypt(padded_plaintext, encrypted, padded_len, roundKeys);
+    printf("ECB Encrypted: ");
+    print_hex(encrypted, padded_len);
+    AES_ECB_decrypt(encrypted, decrypted, padded_len, roundKeys);
+    printf("ECB Decrypted: %s\n", decrypted);
+    memcpy(iv, iv, AES_BLOCK_SIZE); 
+    AES_CBC_encrypt(padded_plaintext, encrypted, padded_len, roundKeys, iv);
+    printf("CBC Encrypted: ");
+    print_hex(encrypted, padded_len);
+    memcpy(iv, iv, AES_BLOCK_SIZE); 
+    AES_CBC_decrypt(encrypted, decrypted, padded_len, roundKeys, iv);
+    printf("CBC Decrypted: %s\n", decrypted);
+    memcpy(iv, iv, AES_BLOCK_SIZE); 
+    AES_CFB_encrypt(padded_plaintext, encrypted, padded_len, roundKeys, iv);
+    printf("CFB Encrypted: ");
+    print_hex(encrypted, padded_len);
+    memcpy(iv, iv, AES_BLOCK_SIZE); 
+    AES_CFB_decrypt(encrypted, decrypted, padded_len, roundKeys, iv);
+    printf("CFB Decrypted: %s\n", decrypted);
+    return 0;
+}
+void KeyExpansion(const uint8_t* key, uint8_t* roundKeys) {
+}
+void AES_encrypt(const uint8_t* input, uint8_t* output, const uint8_t* roundKeys) {
+}
+void AES_decrypt(const uint8_t* input, uint8_t* output, const uint8_t* roundKeys) {
+}
+
+void pad(uint8_t *plaintext, int *len, int block_size) {
+    int pad_len = block_size - (*len % block_size);
+    int i;
+    for (i = 0; i < pad_len; i++) {
+        plaintext[*len + i] = (i == 0) ? 0x80 : 0x00;
+    }
+    *len += pad_len;
+}
+
+void xor_block(uint8_t *a, uint8_t *b, uint8_t *out) {
+	int i;
+    for (i = 0; i < AES_BLOCK_SIZE; i++) {
+        out[i] = a[i] ^ b[i];
+    }
+}
+
+void AES_ECB_encrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys) {
+    int i;
+	for ( i = 0; i < length; i += AES_BLOCK_SIZE) {
+        AES_encrypt(input + i, output + i, roundKeys);
+    }
+}
+
+void AES_ECB_decrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys) {
+    int i;
+	for (i = 0; i < length; i += AES_BLOCK_SIZE) {
+        AES_decrypt(input + i, output + i, roundKeys);
+    }
+}
+
+void AES_CBC_encrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys, uint8_t* iv) {
+    uint8_t block[AES_BLOCK_SIZE];
+    int i;
+	for (i = 0; i < length; i += AES_BLOCK_SIZE) {
+        xor_block(input + i, iv, block);
+        AES_encrypt(block, output + i, roundKeys);
+        memcpy(iv, output + i, AES_BLOCK_SIZE);
+    }
+}
+
+void AES_CBC_decrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys, uint8_t* iv) {
+    uint8_t block[AES_BLOCK_SIZE], temp_iv[AES_BLOCK_SIZE];
+    int i;
+	for (i = 0; i < length; i += AES_BLOCK_SIZE) {
+        memcpy(temp_iv, input + i, AES_BLOCK_SIZE);
+        AES_decrypt(input + i, block, roundKeys);
+        xor_block(block, iv, output + i);
+        memcpy(iv, temp_iv, AES_BLOCK_SIZE);
+    }
+}
+
+void AES_CFB_encrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys, uint8_t* iv) {
+    uint8_t block[AES_BLOCK_SIZE];
+    int i;
+    for ( i = 0; i < length; i += AES_BLOCK_SIZE) {
+        AES_encrypt(iv, block, roundKeys);
+        xor_block(input + i, block, output + i);
+        memcpy(iv, output + i, AES_BLOCK_SIZE);
+    }
+}
+
+void AES_CFB_decrypt(const uint8_t* input, uint8_t* output, int length, const uint8_t* roundKeys, uint8_t* iv) {
+    uint8_t block[AES_BLOCK_SIZE], temp_iv[AES_BLOCK_SIZE];
+    int i;
+	for (i = 0; i < length; i += AES_BLOCK_SIZE) {
+        memcpy(temp_iv, input + i, AES_BLOCK_SIZE);
+        AES_encrypt(iv, block, roundKeys);
+        xor_block(input + i, block, output + i);
+        memcpy(iv, temp_iv, AES_BLOCK_SIZE);
+    }
+}
+
+void print_hex(uint8_t* data, int len) {
+    int i;
+	for (i = 0; i < len; i++) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
+}
