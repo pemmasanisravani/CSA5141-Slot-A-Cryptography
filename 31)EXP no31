@@ -1,0 +1,47 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+void block_cipher_encrypt(uint8_t *input, uint8_t *output) {
+    memcpy(output, input, 16);
+}
+void left_shift(uint8_t *input, uint8_t *output, int block_size) {
+    int i;
+    for (i = 0; i < block_size - 1; i++) {
+        output[i] = (input[i] << 1) | (input[i + 1] >> 7);
+    }
+    output[block_size - 1] = (input[block_size - 1] << 1);
+}
+void xor_with_r(uint8_t *input, uint8_t *output, uint8_t r) {
+    output[15] ^= r; 
+}
+void generate_subkeys(uint8_t *key, uint8_t *K1, uint8_t *K2) {
+    uint8_t L[16] = {0};
+    uint8_t zero_block[16] = {0};
+    uint8_t R_b = 0x87; 
+    block_cipher_encrypt(zero_block, L);
+    left_shift(L, K1, 16);
+    if (L[0] & 0x80) { 
+        xor_with_r(K1, K1, R_b);
+    }
+    left_shift(K1, K2, 16);
+    if (K1[0] & 0x80) { 
+        xor_with_r(K2, K2, R_b);
+    }
+}
+int main() {
+    uint8_t K1[16] = {0};
+    uint8_t K2[16] = {0};
+    uint8_t key[16] = {0};
+    generate_subkeys(key, K1, K2);
+    printf("K1: ");
+    for (int i = 0; i < 16; i++) {
+        printf("%02x ", K1[i]);
+    }
+    printf("\n");
+    printf("K2: ");
+    for (int i = 0; i < 16; i++) {
+        printf("%02x ", K2[i]);
+    }
+    printf("\n");
+    return 0;
+}
