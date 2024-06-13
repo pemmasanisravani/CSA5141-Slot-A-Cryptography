@@ -1,0 +1,68 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#define ALPHABET_SIZE 26
+void count_letter_frequencies(const char *ciphertext, int *freq) {
+    int i;
+    for (i = 0; i < strlen(ciphertext); i++) {
+        char ch = tolower(ciphertext[i]);
+        if (isalpha(ch)) {
+            freq[ch - 'a']++;
+        }
+    }
+}
+void print_plaintexts(const char *ciphertext, int top_results) {
+    int freq[ALPHABET_SIZE] = {0};
+    count_letter_frequencies(ciphertext, freq);
+    int sorted_freq[ALPHABET_SIZE];
+    memcpy(sorted_freq, freq, sizeof(int) * ALPHABET_SIZE);
+    int i, j;
+    for (i = 0; i < ALPHABET_SIZE - 1; i++) {
+        for (j = i + 1; j < ALPHABET_SIZE; j++) {
+            if (sorted_freq[i] < sorted_freq[j]) {
+                int temp = sorted_freq[i];
+                sorted_freq[i] = sorted_freq[j];
+                sorted_freq[j] = temp;
+            }
+        }
+    }
+    int most_freq_index = 0;
+    for (i = 0; i < ALPHABET_SIZE; i++) {
+        if (freq[i] == sorted_freq[0]) {
+            most_freq_index = i;
+            break;
+        }
+    }
+    printf("Top %d possible plaintexts:\n", top_results);
+    for (i = 0; i < top_results; i++) {
+        printf("%d. ", i + 1);
+        for (j = 0; j < strlen(ciphertext); j++) {
+            char ch = tolower(ciphertext[j]);
+            if (isalpha(ch)) {
+                char plaintext_char = 'a' + (ch - 'a' + i) % ALPHABET_SIZE;
+                if (isupper(ciphertext[j])) {
+                    plaintext_char = toupper(plaintext_char);
+                }
+                printf("%c", plaintext_char);
+            } else {
+                printf("%c", ciphertext[j]);
+            }
+        }
+        printf("\n");
+    }
+}
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        printf("Usage: %s <ciphertext> <top_results>\n", argv[0]);
+        return 1;
+    }
+    char *ciphertext = argv[1];
+    int top_results = atoi(argv[2]);
+    if (top_results <= 0) {
+        printf("Number of top results must be a positive integer.\n");
+        return 1;
+    }
+    print_plaintexts(ciphertext, top_results);
+    return 0;
+}
