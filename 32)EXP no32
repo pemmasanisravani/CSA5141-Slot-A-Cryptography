@@ -1,0 +1,44 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+void simple_hash(const unsigned char *message, size_t message_len, unsigned char *output) {
+    unsigned int hash = 0;
+    for (size_t i = 0; i < message_len; ++i) {
+        hash = (hash * 31) + message[i];
+    }
+    memcpy(output, &hash, sizeof(hash));
+}
+void simple_dsa_sign(const unsigned char *message, size_t message_len, unsigned int *r, unsigned int *s) {
+    unsigned char hash[4];
+    simple_hash(message, message_len, hash);
+    unsigned int h = *(unsigned int *)hash;
+    unsigned int k = rand() % 1000 + 1;  
+    *r = (h * k) % 1009;
+    *s = (k * *r) % 1009;
+}
+void simple_rsa_sign(const unsigned char *message, size_t message_len, unsigned int *signature) {
+    unsigned char hash[4];
+    simple_hash(message, message_len, hash);
+    unsigned int h = *(unsigned int *)hash;
+    unsigned int private_key = 65537; 
+    *signature = (h * private_key) % 1009; 
+}
+int main() {
+    const unsigned char message[] = "Hello, World!";
+    size_t message_len = sizeof(message) - 1;
+    srand(time(NULL));
+    printf("DSA Signatures:\n");
+    unsigned int dsa_r1, dsa_s1, dsa_r2, dsa_s2;
+    simple_dsa_sign(message, message_len, &dsa_r1, &dsa_s1);
+    simple_dsa_sign(message, message_len, &dsa_r2, &dsa_s2);
+    printf("DSA Signature 1: (r = %u, s = %u)\n", dsa_r1, dsa_s1);
+    printf("DSA Signature 2: (r = %u, s = %u)\n", dsa_r2, dsa_s2);
+    printf("\nRSA Signatures:\n");
+    unsigned int rsa_sig1, rsa_sig2;
+    simple_rsa_sign(message, message_len, &rsa_sig1);
+    simple_rsa_sign(message, message_len, &rsa_sig2);
+    printf("RSA Signature 1: %u\n", rsa_sig1);
+    printf("RSA Signature 2: %u\n", rsa_sig2);
+    return 0;
+}
